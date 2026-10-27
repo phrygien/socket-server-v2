@@ -1,18 +1,83 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auctav Live Socket.IO Server &amp; Test Bench</title>
-    <meta name="description" content="Serveur Socket.IO haute performance pour enchères équines en direct (Auctav) avec compatibilité Engine.IO v3, gestion de rooms, sécurité admin, rate limiting et banc de test en temps réel." />
-    <meta property="og:title" content="Auctav Live Socket.IO Server &amp; Test Bench" />
-    <meta property="og:description" content="Serveur Socket.IO haute performance pour enchères équines en direct (Auctav) avec compatibilité Engine.IO v3, gestion de rooms, sécurité admin, rate limiting et banc de test en temps réel." />
+    <title>Auctav Live Socket.IO Server (Backend)</title>
+    <meta name="description" content="Serveur Socket.IO backend haute performance pour enchères équines en direct (Auctav) avec compatibilité Engine.IO v3, gestion de rooms, sécurité admin et rate limiting." />
+    <meta property="og:title" content="Auctav Live Socket.IO Server (Backend)" />
+    <meta property="og:description" content="Serveur Socket.IO backend haute performance pour enchères équines en direct (Auctav) avec compatibilité Engine.IO v3, gestion de rooms, sécurité admin et rate limiting." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      body {
+        margin: 0;
+        padding: 40px;
+        background-color: #0b0f19;
+        color: #f1f5f9;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      }
+      .card {
+        max-width: 650px;
+        margin: 40px auto;
+        background: #111827;
+        border: 1px solid #1f2937;
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 20px;
+        color: #f59e0b;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .badge {
+        font-size: 11px;
+        background: rgba(16, 185, 129, 0.2);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        padding: 2px 8px;
+        border-radius: 9999px;
+      }
+      pre {
+        background: #030712;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        overflow-x: auto;
+        color: #93c5fd;
+        border: 1px solid #1f2937;
+      }
+      a {
+        color: #38bdf8;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="card">
+      <h1>🐴 Auctav Socket.IO Server <span class="badge">Pure Backend</span></h1>
+      <p style="color: #94a3b8; font-size: 14px;">
+        Serveur temps réel haute performance pour la plateforme de ventes aux enchères équines Auctav.
+      </p>
+      <ul>
+        <li>Protocole Engine.IO v3 activé (<code>allowEIO3: true</code> pour clients 2.3.0)</li>
+        <li>Clean Architecture &amp; Port/Adapter (Domain, Application, Infrastructure)</li>
+        <li>Limiteur de débit par socket (20 msg/s, 5 doEncheres/s)</li>
+      </ul>
+      <p style="font-size: 13px; color: #cbd5e1;">Endpoints HTTP :</p>
+      <pre>GET /health           → État de santé et nombre de connexions
+GET /api/server-info   → Détail des salles actives et administrateurs
+WS  /socket.io/        → Point d'accès WebSocket et long-polling</pre>
+      <p style="font-size: 12px; color: #64748b;">
+        Accéder directement au JSON d'état : <a href="/health">/health</a>
+      </p>
+    </div>
   </body>
 </html>
-

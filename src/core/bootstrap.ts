@@ -134,6 +134,21 @@ export async function bootstrapAuctavServer(
   socketEventController.register(io);
 
   const healthController = new HttpHealthController(broadcaster, adminStore);
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      service: 'auctav-socket-server',
+      description: 'Serveur de relais temps réel pour ventes aux enchères en direct (Clean Architecture)',
+      status: 'online',
+      architecture: 'Clean Architecture (Domain / Application / Infrastructure / Interfaces)',
+      compatibility: 'Socket.IO v4 avec allowEIO3: true (compatible clients legacy 2.3.0 et v4)',
+      endpoints: {
+        health: '/health',
+        serverInfo: '/api/server-info',
+        socket: '/socket.io/',
+      },
+      timestamp: new Date().toISOString(),
+    });
+  });
   app.get('/health', (req, res) => healthController.getHealth(req, res));
   app.get('/api/server-info', (req, res) => healthController.getServerInfo(req, res));
 

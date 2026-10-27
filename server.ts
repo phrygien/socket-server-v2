@@ -1,47 +1,48 @@
 /**
  * @file server.ts
- * @description Point d'entrée full-stack pour l'environnement de développement et de démonstration.
- * Monte le serveur Socket.IO Auctav (Clean Architecture) et intègre les middlewares Vite en mode dev.
+ * @description Point d'entrée Backend Node.js pour le serveur Auctav Socket.IO (Clean Architecture).
+ * Exécute le serveur HTTP Express et le serveur temps réel Socket.IO sans composant frontend.
  */
 
 import http from 'node:http';
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
 import { bootstrapAuctavServer } from './src/core/bootstrap.ts';
 
 dotenv.config();
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
-const isProd = process.env.NODE_ENV === 'production';
 
 async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Initialisation du serveur Auctav Socket.IO via Clean Architecture
+  // Initialisation du serveur Auctav Socket.IO complet via la racine de composition Clean Architecture
   const { logger } = await bootstrapAuctavServer(httpServer, { app });
 
-  // En mode développement, brancher les middlewares Vite
-  if (!isProd) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+  // Route racine fournissant les métadonnées et l'état du backend
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      service: 'auctav-socket-server',
+      description: 'Serveur de relais temps réel pour ventes aux enchères en direct (Clean Architecture)',
+      status: 'online',
+      architecture: 'Clean Architecture (Domain / Application / Infrastructure / Interfaces)',
+      compatibility: 'Socket.IO v4 avec allowEIO3: true (compatible clients legacy 2.3.0 et v4)',
+      endpoints: {
+        health: '/health',
+        serverInfo: '/api/server-info',
+        socket: '/socket.io/',
+      },
+      timestamp: new Date().toISOString(),
     });
-    app.use(vite.middlewares);
-  } else {
-    app.use(express.static('dist'));
-    app.get('*', (req, res) => {
-      res.sendFile('dist/index.html', { root: '.' });
-    });
-  }
+  });
 
   httpServer.listen(PORT, '0.0.0.0', () => {
-    logger.info(`✨ Serveur Auctav Clean Architecture opérationnel sur le port ${PORT}`);
+    logger.info(`🚀 Serveur Backend Auctav Socket.IO écoute sur http://0.0.0.0:${PORT}`);
   });
 }
 
 startServer().catch(err => {
-  console.error('Erreur au démarrage du serveur:', err);
+  console.error('Erreur fatale au démarrage du backend Auctav:', err);
   process.exit(1);
 });
