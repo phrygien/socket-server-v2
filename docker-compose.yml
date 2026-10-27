@@ -1,0 +1,60 @@
+# ==============================================================================
+# AUCTAV REALTIME SOCKET.IO SERVER - DOCKER COMPOSE
+# ==============================================================================
+version: '3.8'
+
+services:
+  # Service Serveur Socket.IO Auctav
+  auctav-socket:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auctav_socket_server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      ADMIN_KEY: ${ADMIN_KEY:-auctav_secret_production_key_change_me}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://www.auctav.com,https://auctav.com,https://socket-auctav.astucom.com}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      ALLOW_UNAUTH_UPDATELOT: ${ALLOW_UNAUTH_UPDATELOT:-false}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - auctav-net
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Service Redis Optionnel (HA / Cluster / Persistance AdminStore)
+  redis:
+    image: redis:7-alpine
+    container_name: auctav_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - auctav-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  auctav-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

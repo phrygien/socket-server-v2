@@ -1,0 +1,7 @@
+{
+  "name": "Auctav Live Socket.IO Server & Test Bench",
+  "description": "Serveur Socket.IO haute performance pour enchères équines en direct (Auctav) avec compatibilité Engine.IO v3, gestion de rooms, sécurité admin, rate limiting et banc de test en temps réel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
