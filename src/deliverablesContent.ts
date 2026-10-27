@@ -4,6 +4,109 @@
  */
 
 export const deliverables: Record<string, string> = {
+  'architecture-tree.txt': `AUCTAV CLEAN ARCHITECTURE TREE
+================================
+src/core/
+├── domain/                      <- Cœur métier indépendant (zéro dépendance externe)
+│   ├── entities/
+│   │   ├── Room.ts              <- Validation et typage des salles (auctav{ID}, _follow, _screen)
+│   │   ├── Message.ts           <- Normalisation payload, assainissement nom et "from" immuable
+│   │   └── SocketSession.ts     <- État du socket connecté (droits admin, pseudo, rooms)
+│   ├── policies/
+│   │   └── AuthorizationPolicy.ts <- Matrice RBAC (ADMIN_ONLY, NON_ADMIN, exception update.php)
+│   └── ports/                   <- Interfaces / Contrats Hexagonaux
+│       ├── IAdminStore.ts       <- Contrat de persistance de l'autorité admin par room
+│       ├── IBroadcaster.ts      <- Contrat d'émission temps réel (room, private, userList)
+│       ├── ILogger.ts           <- Contrat de journalisation structurée
+│       └── IRateLimiter.ts      <- Contrat de limitation de débit
+│
+├── application/                 <- Cas d'utilisation métier (Use Cases)
+│   └── use-cases/
+│       ├── AuthenticateAdminUseCase.ts <- Vérification timing-safe clé, surclassement session, sync rooms
+│       ├── JoinRoomUseCase.ts          <- Inscription room, assignation autorité, émission userList
+│       ├── RelayRoomMessageUseCase.ts   <- Vérification RBAC, rate-limiting, relais sendMsg
+│       ├── RelayPrivateMessageUseCase.ts<- Vérification cible admin, filtrage types, relais sendMsg
+│       └── HandleDisconnectUseCase.ts  <- Libération des rooms orphelines, userList { admin: null }
+│
+├── infrastructure/              <- Implémentations concrètes (I/O, réseaux, Redis, Crypto)
+│   ├── config/
+│   │   └── ConfigService.ts     <- Configuration typée et validation d'environnement
+│   ├── logging/
+│   │   └── PinoLogger.ts        <- Adaptateur Pino haute performance
+│   ├── security/
+│   │   ├── TimingSafeKeyValidator.ts <- Comparaison SHA-256 constant-time anti timing-attack
+│   │   └── TokenBucketRateLimiter.ts <- Double Token Bucket (20 msg/s global, 5 doEncheres/s)
+│   ├── storage/
+│   │   ├── MemoryAdminStore.ts  <- Magasin mémoire (Map) pour instance unique
+│   │   ├── RedisAdminStore.ts   <- Magasin Redis distribué pour cluster horizontal
+│   │   └── AdminStoreFactory.ts <- Fabrique automatique avec repli mémoire transparent
+│   └── socket/
+│       └── SocketIoBroadcaster.ts <- Adaptateur Socket.IO v4 avec allowEIO3
+│
+├── interfaces/                  <- Contrôleurs et adaptateurs d'entrée
+│   └── controllers/
+│       ├── SocketEventController.ts <- Mappeur d'événements Socket.IO -> Use Cases
+│       └── HttpHealthController.ts  <- Endpoints /health et /api/server-info
+│
+└── bootstrap.ts                 <- Racine de composition (Composition Root / DI)
+`,
+  'src/core/bootstrap.ts': `/**
+ * Racine de composition (DI) Clean Architecture
+ */
+import http from 'node:http';
+import express, { Express } from 'express';
+import { Server as SocketIOServer } from 'socket.io';
+import { ConfigService } from './infrastructure/config/ConfigService.ts';
+import { PinoLogger } from './infrastructure/logging/PinoLogger.ts';
+import { AdminStoreFactory } from './infrastructure/storage/AdminStoreFactory.ts';
+import { TimingSafeKeyValidator } from './infrastructure/security/TimingSafeKeyValidator.ts';
+import { SocketIoBroadcaster } from './infrastructure/socket/SocketIoBroadcaster.ts';
+import { AuthenticateAdminUseCase } from './application/use-cases/AuthenticateAdminUseCase.ts';
+import { JoinRoomUseCase } from './application/use-cases/JoinRoomUseCase.ts';
+import { RelayRoomMessageUseCase } from './application/use-cases/RelayRoomMessageUseCase.ts';
+import { RelayPrivateMessageUseCase } from './application/use-cases/RelayPrivateMessageUseCase.ts';
+import { HandleDisconnectUseCase } from './application/use-cases/HandleDisconnectUseCase.ts';
+import { SocketEventController } from './interfaces/controllers/SocketEventController.ts';
+import { HttpHealthController } from './interfaces/controllers/HttpHealthController.ts';
+
+export async function bootstrapAuctavServer(existingHttpServer = null, options = {}) {
+  const config = new ConfigService();
+  const logger = new PinoLogger(config.get('logLevel'), config.get('nodeEnv') !== 'production');
+  const app = options.app || express();
+  const httpServer = existingHttpServer || http.createServer(app);
+  const adminStore = await AdminStoreFactory.create(config.get('redisUrl'), logger);
+
+  const io = new SocketIOServer(httpServer, {
+    cors: { origin: config.get('allowedOrigins'), credentials: true },
+    allowEIO3: true,
+    transports: ['websocket', 'polling'],
+    maxHttpBufferSize: 1e5,
+  });
+
+  const broadcaster = new SocketIoBroadcaster(io);
+  const keyValidator = new TimingSafeKeyValidator();
+
+  const authAdminUseCase = new AuthenticateAdminUseCase(adminStore, broadcaster, keyValidator, config.get('adminKey'), logger);
+  const joinRoomUseCase = new JoinRoomUseCase(adminStore, broadcaster, logger);
+  const relayRoomUseCase = new RelayRoomMessageUseCase(broadcaster, config.get('allowUnauthUpdateLot'), logger);
+  const relayPrivateUseCase = new RelayPrivateMessageUseCase(adminStore, broadcaster, logger);
+  const handleDisconnectUseCase = new HandleDisconnectUseCase(adminStore, broadcaster, logger);
+
+  new SocketEventController({
+    authAdminUseCase,
+    joinRoomUseCase,
+    relayRoomUseCase,
+    relayPrivateUseCase,
+    handleDisconnectUseCase,
+    logger
+  }).register(io);
+
+  const healthCtrl = new HttpHealthController(broadcaster, adminStore);
+  app.get('/health', (req, res) => healthCtrl.getHealth(req, res));
+
+  return { app, httpServer, io, adminStore, logger: logger.getRawLogger(), broadcaster };
+}
+`,
   'server.js': `/**
  * @file server.js
  * @description Serveur Socket.IO haute performance pour la plateforme de ventes aux enchères équines Auctav.

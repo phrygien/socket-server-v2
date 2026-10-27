@@ -1,14 +1,14 @@
 /**
  * @file server.ts
  * @description Point d'entrée full-stack pour l'environnement de développement et de démonstration.
- * Monte le serveur Socket.IO Auctav et intègre les middlewares Vite en mode développement.
+ * Monte le serveur Socket.IO Auctav (Clean Architecture) et intègre les middlewares Vite en mode dev.
  */
 
 import http from 'node:http';
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import dotenv from 'dotenv';
-import { createAuctavServer } from './src/socketServer.js';
+import { bootstrapAuctavServer } from './src/core/bootstrap.ts';
 
 dotenv.config();
 
@@ -19,38 +19,8 @@ async function startServer() {
   const app = express();
   const httpServer = http.createServer(app);
 
-  // Initialisation du serveur Auctav Socket.IO complet
-  const { io, adminStore, logger } = await createAuctavServer(httpServer as any, { app });
-
-  // API helper pour exécuter le test client automatisé depuis l'interface UI
-  app.get('/api/server-info', async (req, res) => {
-    try {
-      const roomsMap = io.sockets.adapter.rooms;
-      const activeRooms: Array<{ name: string; count: number; admin: string | null }> = [];
-      
-      for (const [roomName, socketsSet] of roomsMap.entries()) {
-        if (/^auctav(\d+|_follow|_screen)$/.test(roomName)) {
-          const adminId = await adminStore.get(roomName);
-          activeRooms.push({
-            name: roomName,
-            count: socketsSet.size,
-            admin: adminId,
-          });
-        }
-      }
-
-      res.json({
-        status: 'ok',
-        uptime: Math.floor(process.uptime()),
-        connections: io.engine ? io.engine.clientsCount : 0,
-        rooms: activeRooms,
-        storage: adminStore.type,
-        eio3Allowed: true,
-      });
-    } catch (err: any) {
-      res.status(500).json({ status: 'error', message: err.message });
-    }
-  });
+  // Initialisation du serveur Auctav Socket.IO via Clean Architecture
+  const { logger } = await bootstrapAuctavServer(httpServer, { app });
 
   // En mode développement, brancher les middlewares Vite
   if (!isProd) {
@@ -60,7 +30,6 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // En production pour l'applet, servir les fichiers statiques construits
     app.use(express.static('dist'));
     app.get('*', (req, res) => {
       res.sendFile('dist/index.html', { root: '.' });
@@ -68,7 +37,7 @@ async function startServer() {
   }
 
   httpServer.listen(PORT, '0.0.0.0', () => {
-    logger.info(`✨ Serveur Full-Stack & UI de test Auctav écoute sur le port ${PORT}`);
+    logger.info(`✨ Serveur Auctav Clean Architecture opérationnel sur le port ${PORT}`);
   });
 }
 
