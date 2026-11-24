@@ -1,25 +1,13 @@
 /**
- * @file src/core/infrastructure/config/ConfigService.ts
- * @description Service de configuration fortement typé avec valeurs par défaut sécurisées.
+ * @file src/core/infrastructure/config/ConfigService.js
+ * @description Service de configuration avec valeurs par défaut sécurisées.
  */
 
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-export interface AuctavConfig {
-  port: number;
-  adminKey: string;
-  allowedOrigins: string[];
-  redisUrl: string | null;
-  logLevel: string;
-  allowUnauthUpdateLot: boolean;
-  nodeEnv: string;
-}
-
 export class ConfigService {
-  private readonly config: AuctavConfig;
-
   constructor() {
     const rawOrigins = process.env.ALLOWED_ORIGINS || 'https://www.auctav.com,https://auctav.com';
     const origins = rawOrigins
@@ -38,11 +26,14 @@ export class ConfigService {
     };
   }
 
-  public get<K extends keyof AuctavConfig>(key: K): AuctavConfig[K] {
+  /**
+   * @param {'port' | 'adminKey' | 'allowedOrigins' | 'redisUrl' | 'logLevel' | 'allowUnauthUpdateLot' | 'nodeEnv'} key
+   */
+  get(key) {
     return this.config[key];
   }
 
-  public getAll(): AuctavConfig {
+  getAll() {
     return { ...this.config };
   }
 }

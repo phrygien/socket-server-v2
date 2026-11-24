@@ -1,19 +1,23 @@
 /**
- * @file src/core/interfaces/controllers/HttpHealthController.ts
+ * @file src/core/interfaces/controllers/HttpHealthController.js
  * @description Contrôleur HTTP pour les endpoints /health et /api/server-info.
  */
 
-import { Request, Response } from 'express';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-
 export class HttpHealthController {
-  constructor(
-    private readonly broadcaster: IBroadcaster,
-    private readonly adminStore: IAdminStore
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
+   */
+  constructor(broadcaster, adminStore) {
+    this.broadcaster = broadcaster;
+    this.adminStore = adminStore;
+  }
 
-  public getHealth(req: Request, res: Response): void {
+  /**
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  getHealth(req, res) {
     try {
       const activeRooms = this.broadcaster.getAllActiveRooms();
       res.status(200).json({
@@ -26,15 +30,19 @@ export class HttpHealthController {
         storage: this.adminStore.type,
         timestamp: new Date().toISOString(),
       });
-    } catch (err: any) {
+    } catch (err) {
       res.status(500).json({ status: 'error', message: err.message });
     }
   }
 
-  public async getServerInfo(req: Request, res: Response): Promise<void> {
+  /**
+   * @param {import('express').Request} req
+   * @param {import('express').Response} res
+   */
+  async getServerInfo(req, res) {
     try {
       const activeRoomsNames = this.broadcaster.getAllActiveRooms();
-      const roomsInfo: Array<{ name: string; count: number; admin: string | null }> = [];
+      const roomsInfo = [];
 
       for (const roomName of activeRoomsNames) {
         const adminId = await this.adminStore.get(roomName);
@@ -54,7 +62,7 @@ export class HttpHealthController {
         storage: this.adminStore.type,
         eio3Allowed: true,
       });
-    } catch (err: any) {
+    } catch (err) {
       res.status(500).json({ status: 'error', message: err.message });
     }
   }

@@ -1,33 +1,29 @@
 /**
- * @file src/core/bootstrap.ts
- * @description Racine de composition (Composition Root) assemblant toutes les couches Clean Architecture.
+ * @file src/core/bootstrap.js
+ * @description Racine de composition (Composition Root) assemblant toutes les couches Clean Architecture en ESM pur Node.js 20+.
  */
 
 import http from 'node:http';
-import express, { Express } from 'express';
+import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
-import { ConfigService } from './infrastructure/config/ConfigService.ts';
-import { PinoLogger } from './infrastructure/logging/PinoLogger.ts';
-import { AdminStoreFactory } from './infrastructure/storage/AdminStoreFactory.ts';
-import { TimingSafeKeyValidator } from './infrastructure/security/TimingSafeKeyValidator.ts';
-import { SocketIoBroadcaster } from './infrastructure/socket/SocketIoBroadcaster.ts';
-import { AuthenticateAdminUseCase } from './application/use-cases/AuthenticateAdminUseCase.ts';
-import { JoinRoomUseCase } from './application/use-cases/JoinRoomUseCase.ts';
-import { RelayRoomMessageUseCase } from './application/use-cases/RelayRoomMessageUseCase.ts';
-import { RelayPrivateMessageUseCase } from './application/use-cases/RelayPrivateMessageUseCase.ts';
-import { HandleDisconnectUseCase } from './application/use-cases/HandleDisconnectUseCase.ts';
-import { SocketEventController } from './interfaces/controllers/SocketEventController.ts';
-import { HttpHealthController } from './interfaces/controllers/HttpHealthController.ts';
+import { ConfigService } from './infrastructure/config/ConfigService.js';
+import { PinoLogger } from './infrastructure/logging/PinoLogger.js';
+import { AdminStoreFactory } from './infrastructure/storage/AdminStoreFactory.js';
+import { TimingSafeKeyValidator } from './infrastructure/security/TimingSafeKeyValidator.js';
+import { SocketIoBroadcaster } from './infrastructure/socket/SocketIoBroadcaster.js';
+import { AuthenticateAdminUseCase } from './application/use-cases/AuthenticateAdminUseCase.js';
+import { JoinRoomUseCase } from './application/use-cases/JoinRoomUseCase.js';
+import { RelayRoomMessageUseCase } from './application/use-cases/RelayRoomMessageUseCase.js';
+import { RelayPrivateMessageUseCase } from './application/use-cases/RelayPrivateMessageUseCase.js';
+import { HandleDisconnectUseCase } from './application/use-cases/HandleDisconnectUseCase.js';
+import { SocketEventController } from './interfaces/controllers/SocketEventController.js';
+import { HttpHealthController } from './interfaces/controllers/HttpHealthController.js';
 
-export interface BootstrapOptions {
-  app?: Express;
-  redisUrl?: string | null;
-}
-
-export async function bootstrapAuctavServer(
-  existingHttpServer: http.Server | null = null,
-  options: BootstrapOptions = {}
-) {
+/**
+ * @param {http.Server | null} [existingHttpServer=null]
+ * @param {{ app?: import('express').Express, redisUrl?: string | null }} [options={}]
+ */
+export async function bootstrapAuctavServer(existingHttpServer = null, options = {}) {
   // 1. Configuration & Logger
   const configService = new ConfigService();
   const isDev = configService.get('nodeEnv') !== 'production';
@@ -44,13 +40,13 @@ export async function bootstrapAuctavServer(
   const app = options.app || express();
   const httpServer = existingHttpServer || http.createServer(app);
 
-  // 3. Magasin d'état Admin (Clean Architecture Repository)
+  // 3. Magasin d'état Admin
   const redisUrl = options.redisUrl !== undefined ? options.redisUrl : configService.get('redisUrl');
   const adminStore = await AdminStoreFactory.create(redisUrl, logger);
 
-  // 4. Configuration CORS stricte
+  // 4. Configuration CORS stricte (jamais de '*')
   const allowedOrigins = configService.get('allowedOrigins');
-  const corsOriginCheck = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+  const corsOriginCheck = (origin, callback) => {
     if (!origin) return callback(null, true);
     if (
       isDev &&
@@ -91,12 +87,12 @@ export async function bootstrapAuctavServer(
       const pubClient = new Redis(redisUrl);
       const subClient = pubClient.duplicate();
 
-      pubClient.on('error', (err: any) => logger.error({ err: err.message }, 'Redis PubClient Error'));
-      subClient.on('error', (err: any) => logger.error({ err: err.message }, 'Redis SubClient Error'));
+      pubClient.on('error', err => logger.error({ err: err.message }, 'Redis PubClient Error'));
+      subClient.on('error', err => logger.error({ err: err.message }, 'Redis SubClient Error'));
 
       io.adapter(createAdapter(pubClient, subClient));
       logger.info('Adaptateur @socket.io/redis-adapter activé avec succès');
-    } catch (err: any) {
+    } catch (err) {
       logger.error({ err: err.message }, 'Échec configuration adaptateur Redis Socket.IO');
     }
   }
@@ -153,7 +149,7 @@ export async function bootstrapAuctavServer(
   app.get('/api/server-info', (req, res) => healthController.getServerInfo(req, res));
 
   // 9. Arrêt propre (Graceful Shutdown)
-  const shutdown = async (signal: string) => {
+  const shutdown = async signal => {
     logger.info({ signal }, 'Signal de fermeture reçu, arrêt propre du serveur Auctav...');
     try {
       io.close(() => logger.info('Connexions Socket.IO fermées.'));
@@ -163,7 +159,7 @@ export async function bootstrapAuctavServer(
         process.exit(0);
       });
       setTimeout(() => process.exit(1), 10000).unref();
-    } catch (err: any) {
+    } catch (err) {
       logger.error({ err: err.message }, 'Erreur pendant la fermeture');
       process.exit(1);
     }

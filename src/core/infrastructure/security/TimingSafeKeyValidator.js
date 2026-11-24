@@ -1,13 +1,17 @@
 /**
- * @file src/core/infrastructure/security/TimingSafeKeyValidator.ts
+ * @file src/core/infrastructure/security/TimingSafeKeyValidator.js
  * @description Implémentation du validateur de clé en temps constant avec hachage SHA-256.
  */
 
 import crypto from 'node:crypto';
-import { IKeyValidator } from '../../application/use-cases/AuthenticateAdminUseCase.ts';
 
-export class TimingSafeKeyValidator implements IKeyValidator {
-  public isValid(providedKey: unknown, expectedKey: string): boolean {
+export class TimingSafeKeyValidator {
+  /**
+   * @param {unknown} providedKey
+   * @param {string} expectedKey
+   * @returns {boolean}
+   */
+  isValid(providedKey, expectedKey) {
     if (typeof providedKey !== 'string' || typeof expectedKey !== 'string') {
       return false;
     }

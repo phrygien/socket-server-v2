@@ -1,18 +1,18 @@
 /**
- * @file src/core/infrastructure/security/TokenBucketRateLimiter.ts
+ * @file src/core/infrastructure/security/TokenBucketRateLimiter.js
  * @description Implémentation du limiteur de débit par Token Bucket (20 msg/s total, 5 doEncheres/s).
  */
 
-import { IRateLimiter } from '../../domain/ports/IRateLimiter.ts';
+export class TokenBucketRateLimiter {
+  constructor() {
+    this.globalCapacity = 20;
+    this.globalTokens = 20;
+    this.bidCapacity = 5;
+    this.bidTokens = 5;
+    this.lastRefill = Date.now();
+  }
 
-export class TokenBucketRateLimiter implements IRateLimiter {
-  private globalCapacity: number = 20;
-  private globalTokens: number = 20;
-  private bidCapacity: number = 5;
-  private bidTokens: number = 5;
-  private lastRefill: number = Date.now();
-
-  private refill(): void {
+  refill() {
     const now = Date.now();
     const elapsedSeconds = (now - this.lastRefill) / 1000;
     if (elapsedSeconds > 0) {
@@ -28,7 +28,11 @@ export class TokenBucketRateLimiter implements IRateLimiter {
     }
   }
 
-  public tryConsume(type: string): boolean {
+  /**
+   * @param {string} type
+   * @returns {boolean}
+   */
+  tryConsume(type) {
     this.refill();
 
     if (this.globalTokens < 1) {

@@ -1,15 +1,18 @@
 /**
- * @file src/core/infrastructure/storage/AdminStoreFactory.ts
+ * @file src/core/infrastructure/storage/AdminStoreFactory.js
  * @description Fabrique de création du magasin Admin (Redis avec repli transparent sur Memory).
  */
 
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
-import { MemoryAdminStore } from './MemoryAdminStore.ts';
-import { RedisAdminStore } from './RedisAdminStore.ts';
+import { MemoryAdminStore } from './MemoryAdminStore.js';
+import { RedisAdminStore } from './RedisAdminStore.js';
 
 export class AdminStoreFactory {
-  public static async create(redisUrl: string | null, logger: ILogger): Promise<IAdminStore> {
+  /**
+   * @param {string | null} redisUrl
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   * @returns {Promise<import('../../domain/ports/types.js').IAdminStore>}
+   */
+  static async create(redisUrl, logger) {
     if (redisUrl) {
       try {
         const { default: Redis } = await import('ioredis');
@@ -18,13 +21,13 @@ export class AdminStoreFactory {
           enableReadyCheck: true,
         });
 
-        redis.on('error', (err: any) => {
+        redis.on('error', err => {
           logger.error({ err: err.message }, 'Erreur client Redis adminStore');
         });
 
         logger.info({ redisUrl }, 'adminStore initialisé sur Redis');
         return new RedisAdminStore(redis, logger);
-      } catch (err: any) {
+      } catch (err) {
         logger.error({ err: err.message }, 'Échec initialisation Redis, repli automatique sur mémoire interne');
       }
     }

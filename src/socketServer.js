@@ -1,16 +1,14 @@
 /**
  * @file src/socketServer.js
- * @description Point d'entrée du moteur Socket.IO Auctav utilisant la Clean Architecture.
- * Maintient la compatibilité ascendante complète des exports tout en déléguant à la Clean Architecture.
+ * @description Point d'entrée du moteur Socket.IO Auctav utilisant la Clean Architecture (ESM pur Node.js 20+).
  */
 
-import { bootstrapAuctavServer } from './core/bootstrap.ts';
-import { AdminStoreFactory } from './core/infrastructure/storage/AdminStoreFactory.ts';
-import { TimingSafeKeyValidator } from './core/infrastructure/security/TimingSafeKeyValidator.ts';
-import { TokenBucketRateLimiter } from './core/infrastructure/security/TokenBucketRateLimiter.ts';
-import { AuthorizationPolicy } from './core/domain/policies/AuthorizationPolicy.ts';
-import { Room } from './core/domain/entities/Room.ts';
-import { PinoLogger } from './core/infrastructure/logging/PinoLogger.ts';
+import { bootstrapAuctavServer } from './core/bootstrap.js';
+import { AdminStoreFactory } from './core/infrastructure/storage/AdminStoreFactory.js';
+import { TimingSafeKeyValidator } from './core/infrastructure/security/TimingSafeKeyValidator.js';
+import { TokenBucketRateLimiter } from './core/infrastructure/security/TokenBucketRateLimiter.js';
+import { AuthorizationPolicy } from './core/domain/policies/AuthorizationPolicy.js';
+import { PinoLogger } from './core/infrastructure/logging/PinoLogger.js';
 
 const defaultLogger = new PinoLogger('info', process.env.NODE_ENV !== 'production');
 const defaultKeyValidator = new TimingSafeKeyValidator();
@@ -35,8 +33,8 @@ export function isValidMessageType(type) {
 export const SocketRateLimiter = TokenBucketRateLimiter;
 
 /**
- * @param {import('node:http').Server | any} [existingHttpServer]
- * @param {Record<string, any>} [options]
+ * @param {import('node:http').Server | null} [existingHttpServer=null]
+ * @param {Record<string, any>} [options={}]
  */
 export async function createAuctavServer(existingHttpServer = null, options = {}) {
   return await bootstrapAuctavServer(existingHttpServer, options);

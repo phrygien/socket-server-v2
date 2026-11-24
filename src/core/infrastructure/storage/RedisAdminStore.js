@@ -1,48 +1,49 @@
 /**
- * @file src/core/infrastructure/storage/RedisAdminStore.ts
+ * @file src/core/infrastructure/storage/RedisAdminStore.js
  * @description Implémentation Redis distribuée de IAdminStore via ioredis (clé auctav:admin:{room}).
  */
 
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
+export class RedisAdminStore {
+  /**
+   * @param {any} redisClient
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(redisClient, logger) {
+    /** @type {'redis'} */
+    this.type = 'redis';
+    this.redisClient = redisClient;
+    this.logger = logger;
+  }
 
-export class RedisAdminStore implements IAdminStore {
-  public readonly type = 'redis' as const;
-
-  constructor(
-    private readonly redisClient: any,
-    private readonly logger: ILogger
-  ) {}
-
-  public async get(room: string): Promise<string | null> {
+  async get(room) {
     try {
       return await this.redisClient.get(`auctav:admin:${room}`);
-    } catch (err: any) {
+    } catch (err) {
       this.logger.error({ err: err.message, room }, 'Erreur Redis get admin');
       return null;
     }
   }
 
-  public async set(room: string, socketId: string): Promise<void> {
+  async set(room, socketId) {
     try {
       await this.redisClient.set(`auctav:admin:${room}`, socketId);
-    } catch (err: any) {
+    } catch (err) {
       this.logger.error({ err: err.message, room, socketId }, 'Erreur Redis set admin');
     }
   }
 
-  public async delete(room: string): Promise<void> {
+  async delete(room) {
     try {
       await this.redisClient.del(`auctav:admin:${room}`);
-    } catch (err: any) {
+    } catch (err) {
       this.logger.error({ err: err.message, room }, 'Erreur Redis delete admin');
     }
   }
 
-  public async getRoomsBySocketId(socketId: string): Promise<string[]> {
+  async getRoomsBySocketId(socketId) {
     try {
-      const keys: string[] = await this.redisClient.keys('auctav:admin:*');
-      const matchingRooms: string[] = [];
+      const keys = await this.redisClient.keys('auctav:admin:*');
+      const matchingRooms = [];
       for (const key of keys) {
         const val = await this.redisClient.get(key);
         if (val === socketId) {
@@ -50,27 +51,27 @@ export class RedisAdminStore implements IAdminStore {
         }
       }
       return matchingRooms;
-    } catch (err: any) {
+    } catch (err) {
       this.logger.error({ err: err.message, socketId }, 'Erreur Redis getRoomsBySocketId');
       return [];
     }
   }
 
-  public async isAdminSocket(socketId: string): Promise<boolean> {
+  async isAdminSocket(socketId) {
     try {
-      const keys: string[] = await this.redisClient.keys('auctav:admin:*');
+      const keys = await this.redisClient.keys('auctav:admin:*');
       for (const key of keys) {
         const val = await this.redisClient.get(key);
         if (val === socketId) return true;
       }
       return false;
-    } catch (err: any) {
+    } catch (err) {
       this.logger.error({ err: err.message, socketId }, 'Erreur Redis isAdminSocket');
       return false;
     }
   }
 
-  public async close(): Promise<void> {
+  async close() {
     try {
       await this.redisClient.quit();
     } catch {

@@ -1,28 +1,29 @@
 /**
- * @file src/core/application/use-cases/RelayRoomMessageUseCase.ts
+ * @file src/core/application/use-cases/RelayRoomMessageUseCase.js
  * @description Cas d'utilisation : Relais d'un message vers tous les membres d'une room avec contrôle d'autorisation.
  */
 
-import { SocketSession } from '../../domain/entities/SocketSession.ts';
-import { Room } from '../../domain/entities/Room.ts';
-import { Message } from '../../domain/entities/Message.ts';
-import { AuthorizationPolicy } from '../../domain/policies/AuthorizationPolicy.ts';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { IRateLimiter } from '../../domain/ports/IRateLimiter.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
+import { Room } from '../../domain/entities/Room.js';
+import { Message } from '../../domain/entities/Message.js';
+import { AuthorizationPolicy } from '../../domain/policies/AuthorizationPolicy.js';
 
 export class RelayRoomMessageUseCase {
-  constructor(
-    private readonly broadcaster: IBroadcaster,
-    private readonly allowUnauthUpdateLot: boolean,
-    private readonly logger: ILogger
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {boolean} allowUnauthUpdateLot
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(broadcaster, allowUnauthUpdateLot, logger) {
+    this.broadcaster = broadcaster;
+    this.allowUnauthUpdateLot = allowUnauthUpdateLot;
+    this.logger = logger;
+  }
 
-  public execute(params: {
-    session: SocketSession;
-    rateLimiter: IRateLimiter;
-    payload: any;
-  }): boolean {
+  /**
+   * @param {{ session: import('../../domain/entities/SocketSession.js').SocketSession, rateLimiter: import('../../domain/ports/types.js').IRateLimiter, payload: any }} params
+   * @returns {boolean}
+   */
+  execute(params) {
     const { session, rateLimiter, payload } = params;
 
     if (!payload || typeof payload !== 'object') return false;
@@ -40,7 +41,6 @@ export class RelayRoomMessageUseCase {
 
     if (!message) return false;
 
-    // Rate Limiting
     if (!rateLimiter.tryConsume(message.type)) {
       this.logger.warn(
         { socketId: session.socketId, type: message.type, ip: session.clientIp },
@@ -49,7 +49,6 @@ export class RelayRoomMessageUseCase {
       return false;
     }
 
-    // Vérification des droits d'émission
     const authCheck = AuthorizationPolicy.canEmitToRoom(
       session,
       message.type,
@@ -71,7 +70,6 @@ export class RelayRoomMessageUseCase {
       );
     }
 
-    // Relais sous l'événement unique sendMsg
     this.broadcaster.broadcastToRoom(room.name, 'sendMsg', message.toPayload());
     return true;
   }

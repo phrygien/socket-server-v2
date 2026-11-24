@@ -1,26 +1,27 @@
 /**
- * @file src/core/application/use-cases/JoinRoomUseCase.ts
+ * @file src/core/application/use-cases/JoinRoomUseCase.js
  * @description Cas d'utilisation : Inscription d'un socket à une room et diffusion de l'état userList.
  */
 
-import { SocketSession } from '../../domain/entities/SocketSession.ts';
-import { Room } from '../../domain/entities/Room.ts';
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
+import { Room } from '../../domain/entities/Room.js';
 
 export class JoinRoomUseCase {
-  constructor(
-    private readonly adminStore: IAdminStore,
-    private readonly broadcaster: IBroadcaster,
-    private readonly logger: ILogger
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(adminStore, broadcaster, logger) {
+    this.adminStore = adminStore;
+    this.broadcaster = broadcaster;
+    this.logger = logger;
+  }
 
-  public async execute(params: {
-    session: SocketSession;
-    rawRoom: unknown;
-    onJoinSocketRoom: (roomName: string) => void;
-  }): Promise<boolean> {
+  /**
+   * @param {{ session: import('../../domain/entities/SocketSession.js').SocketSession, rawRoom: unknown, onJoinSocketRoom: (roomName: string) => void }} params
+   * @returns {Promise<boolean>}
+   */
+  async execute(params) {
     const { session, rawRoom, onJoinSocketRoom } = params;
 
     const room = Room.fromName(rawRoom);
@@ -41,7 +42,7 @@ export class JoinRoomUseCase {
 
     const userListPayload = {
       admin: currentAdminId || null,
-      count: count,
+      count,
     };
 
     // Diffusion à toute la room ET au socket qui vient de rejoindre

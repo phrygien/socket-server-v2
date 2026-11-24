@@ -25,6 +25,7 @@ RUN npm ci --omit=dev --ignore-scripts && \
 
 # Copie du code source du serveur
 COPY server.js ./
+COPY src ./src
 
 # Attribution des droits au compte applicatif
 RUN chown -R auctav:auctav /app

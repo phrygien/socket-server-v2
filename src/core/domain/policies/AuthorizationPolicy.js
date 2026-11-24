@@ -1,12 +1,10 @@
 /**
- * @file src/core/domain/policies/AuthorizationPolicy.ts
+ * @file src/core/domain/policies/AuthorizationPolicy.js
  * @description Politiques de sécurité et matrice des droits d'émission pour le protocole Auctav.
  */
 
-import { SocketSession } from '../entities/SocketSession.ts';
-
 export class AuthorizationPolicy {
-  public static readonly ADMIN_ONLY_TYPES = new Set([
+  static ADMIN_ONLY_TYPES = new Set([
     'numLot',
     'listLot',
     'updateLot',
@@ -21,7 +19,7 @@ export class AuthorizationPolicy {
     'users',
   ]);
 
-  public static readonly NON_ADMIN_ALLOWED_TYPES = new Set([
+  static NON_ADMIN_ALLOWED_TYPES = new Set([
     'doEncheres',
     'reconnection',
     'getEncheresList',
@@ -35,17 +33,16 @@ export class AuthorizationPolicy {
 
   /**
    * Vérifie si une session a le droit d'émettre un type de message vers toute une room.
+   * @param {import('../entities/SocketSession.js').SocketSession} session
+   * @param {string} messageType
+   * @param {boolean} [allowUnauthUpdateLot=false]
+   * @returns {{ allowed: boolean, reason?: string }}
    */
-  public static canEmitToRoom(
-    session: SocketSession,
-    messageType: string,
-    allowUnauthUpdateLot: boolean = false
-  ): { allowed: boolean; reason?: string } {
+  static canEmitToRoom(session, messageType, allowUnauthUpdateLot = false) {
     if (session.isAdmin) {
       return { allowed: true };
     }
 
-    // Exception temporaire pour update.php
     if (allowUnauthUpdateLot && messageType === 'updateLot') {
       return { allowed: true, reason: 'exception_unauth_updatelot' };
     }
@@ -58,12 +55,12 @@ export class AuthorizationPolicy {
 
   /**
    * Vérifie si une session a le droit d'envoyer un message privé à un destinataire donné.
+   * @param {import('../entities/SocketSession.js').SocketSession} session
+   * @param {boolean} targetIsAdmin
+   * @param {string} messageType
+   * @returns {{ allowed: boolean, reason?: string }}
    */
-  public static canEmitPrivate(
-    session: SocketSession,
-    targetIsAdmin: boolean,
-    messageType: string
-  ): { allowed: boolean; reason?: string } {
+  static canEmitPrivate(session, targetIsAdmin, messageType) {
     if (session.isAdmin) {
       return { allowed: true };
     }

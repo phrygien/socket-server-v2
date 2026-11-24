@@ -1,23 +1,28 @@
 /**
- * @file src/core/domain/entities/Room.ts
+ * @file src/core/domain/entities/Room.js
  * @description Entité Room représentant une salle de vente aux enchères ou un canal de diffusion.
  */
 
-export type RoomType = 'sale' | 'follow' | 'screen';
-
 export class Room {
-  private static readonly ROOM_PATTERN = /^auctav(\d+|_follow|_screen)$/;
+  static ROOM_PATTERN = /^auctav(\d+|_follow|_screen)$/;
 
-  private constructor(
-    public readonly name: string,
-    public readonly type: RoomType,
-    public readonly saleId?: number
-  ) {}
+  /**
+   * @param {string} name
+   * @param {'sale' | 'follow' | 'screen'} type
+   * @param {number} [saleId]
+   */
+  constructor(name, type, saleId) {
+    this.name = name;
+    this.type = type;
+    this.saleId = saleId;
+  }
 
   /**
    * Crée et valide une instance de Room à partir de son nom.
+   * @param {unknown} rawName
+   * @returns {Room | null}
    */
-  public static fromName(rawName: unknown): Room | null {
+  static fromName(rawName) {
     if (typeof rawName !== 'string') return null;
     const trimmed = rawName.trim();
     const match = trimmed.match(Room.ROOM_PATTERN);
@@ -31,10 +36,14 @@ export class Room {
     }
 
     const saleId = parseInt(match[1], 10);
-    return new Room(trimmed, 'sale', isNaN(saleId) ? undefined : saleId);
+    return new Room(trimmed, 'sale', Number.isNaN(saleId) ? undefined : saleId);
   }
 
-  public static isValid(name: unknown): boolean {
+  /**
+   * @param {unknown} name
+   * @returns {boolean}
+   */
+  static isValid(name) {
     return Room.fromName(name) !== null;
   }
 }

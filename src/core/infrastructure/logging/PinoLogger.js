@@ -1,15 +1,16 @@
 /**
- * @file src/core/infrastructure/logging/PinoLogger.ts
+ * @file src/core/infrastructure/logging/PinoLogger.js
  * @description Adaptateur de journalisation structurée basé sur Pino.
  */
 
 import pino from 'pino';
-import { ILogger } from '../../domain/ports/ILogger.ts';
 
-export class PinoLogger implements ILogger {
-  private readonly logger: pino.Logger;
-
-  constructor(logLevel: string = 'info', isDev: boolean = false) {
+export class PinoLogger {
+  /**
+   * @param {string} [logLevel='info']
+   * @param {boolean} [isDev=false]
+   */
+  constructor(logLevel = 'info', isDev = false) {
     this.logger = pino({
       level: logLevel,
       ...(isDev
@@ -27,7 +28,7 @@ export class PinoLogger implements ILogger {
     });
   }
 
-  public info(objOrMsg: any, msg?: string): void {
+  info(objOrMsg, msg) {
     if (typeof objOrMsg === 'string') {
       this.logger.info(objOrMsg);
     } else {
@@ -35,7 +36,7 @@ export class PinoLogger implements ILogger {
     }
   }
 
-  public warn(objOrMsg: any, msg?: string): void {
+  warn(objOrMsg, msg) {
     if (typeof objOrMsg === 'string') {
       this.logger.warn(objOrMsg);
     } else {
@@ -43,7 +44,7 @@ export class PinoLogger implements ILogger {
     }
   }
 
-  public error(objOrMsg: any, msg?: string): void {
+  error(objOrMsg, msg) {
     if (typeof objOrMsg === 'string') {
       this.logger.error(objOrMsg);
     } else {
@@ -51,7 +52,7 @@ export class PinoLogger implements ILogger {
     }
   }
 
-  public debug(objOrMsg: any, msg?: string): void {
+  debug(objOrMsg, msg) {
     if (typeof objOrMsg === 'string') {
       this.logger.debug(objOrMsg);
     } else {
@@ -59,7 +60,7 @@ export class PinoLogger implements ILogger {
     }
   }
 
-  public getRawLogger(): pino.Logger {
+  getRawLogger() {
     return this.logger;
   }
 }

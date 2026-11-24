@@ -1,22 +1,27 @@
 /**
- * @file src/core/application/use-cases/HandleDisconnectUseCase.ts
+ * @file src/core/application/use-cases/HandleDisconnectUseCase.js
  * @description Cas d'utilisation : Gestion de la déconnexion d'un client et resynchronisation de userList.
  */
 
-import { SocketSession } from '../../domain/entities/SocketSession.ts';
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
-import { Room } from '../../domain/entities/Room.ts';
+import { Room } from '../../domain/entities/Room.js';
 
 export class HandleDisconnectUseCase {
-  constructor(
-    private readonly adminStore: IAdminStore,
-    private readonly broadcaster: IBroadcaster,
-    private readonly logger: ILogger
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(adminStore, broadcaster, logger) {
+    this.adminStore = adminStore;
+    this.broadcaster = broadcaster;
+    this.logger = logger;
+  }
 
-  public async execute(session: SocketSession): Promise<void> {
+  /**
+   * @param {import('../../domain/entities/SocketSession.js').SocketSession} session
+   * @returns {Promise<void>}
+   */
+  async execute(session) {
     if (session.isAdmin) {
       const ownedRooms = await this.adminStore.getRoomsBySocketId(session.socketId);
 

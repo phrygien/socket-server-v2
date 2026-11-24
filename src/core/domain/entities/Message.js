@@ -1,25 +1,29 @@
 /**
- * @file src/core/domain/entities/Message.ts
+ * @file src/core/domain/entities/Message.js
  * @description Value Object et validation des messages relayés dans le protocole Auctav.
  */
 
 export class Message {
-  private static readonly TYPE_PATTERN = /^[a-zA-Z0-9_]{1,40}$/;
+  static TYPE_PATTERN = /^[a-zA-Z0-9_]{1,40}$/;
 
-  private constructor(
-    public readonly type: string,
-    public readonly msg: Record<string, any>,
-    public readonly name: string,
-    public readonly from: string
-  ) {}
+  /**
+   * @param {string} type
+   * @param {Record<string, any>} msg
+   * @param {string} name
+   * @param {string} from
+   */
+  constructor(type, msg, name, from) {
+    this.type = type;
+    this.msg = msg;
+    this.name = name;
+    this.from = from;
+  }
 
-  public static create(params: {
-    rawType: unknown;
-    rawMsg: unknown;
-    rawName: unknown;
-    verifiedFrom: string;
-    fallbackName?: string;
-  }): Message | null {
+  /**
+   * @param {{ rawType: unknown, rawMsg: unknown, rawName: unknown, verifiedFrom: string, fallbackName?: string }} params
+   * @returns {Message | null}
+   */
+  static create(params) {
     if (typeof params.rawType !== 'string' || !Message.TYPE_PATTERN.test(params.rawType)) {
       return null;
     }
@@ -28,15 +32,13 @@ export class Message {
       return null;
     }
 
-    // Normalisation de msg (doit être un objet)
-    let sanitizedMsg: Record<string, any>;
+    let sanitizedMsg;
     if (typeof params.rawMsg === 'object' && params.rawMsg !== null) {
-      sanitizedMsg = params.rawMsg as Record<string, any>;
+      sanitizedMsg = params.rawMsg;
     } else {
       sanitizedMsg = { value: params.rawMsg };
     }
 
-    // Normalisation du nom (tronqué à 100 caractères max)
     let sanitizedName = params.fallbackName || 'Anonyme';
     if (typeof params.rawName === 'string' && params.rawName.trim().length > 0) {
       sanitizedName = params.rawName.trim().slice(0, 100);
@@ -50,7 +52,7 @@ export class Message {
     );
   }
 
-  public toPayload() {
+  toPayload() {
     return {
       type: this.type,
       msg: this.msg,

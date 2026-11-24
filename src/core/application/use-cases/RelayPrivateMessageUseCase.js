@@ -1,28 +1,28 @@
 /**
- * @file src/core/application/use-cases/RelayPrivateMessageUseCase.ts
+ * @file src/core/application/use-cases/RelayPrivateMessageUseCase.js
  * @description Cas d'utilisation : Relais d'un message privé vers un socket cible.
  */
 
-import { SocketSession } from '../../domain/entities/SocketSession.ts';
-import { Message } from '../../domain/entities/Message.ts';
-import { AuthorizationPolicy } from '../../domain/policies/AuthorizationPolicy.ts';
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { IRateLimiter } from '../../domain/ports/IRateLimiter.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
+import { Message } from '../../domain/entities/Message.js';
+import { AuthorizationPolicy } from '../../domain/policies/AuthorizationPolicy.js';
 
 export class RelayPrivateMessageUseCase {
-  constructor(
-    private readonly adminStore: IAdminStore,
-    private readonly broadcaster: IBroadcaster,
-    private readonly logger: ILogger
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(adminStore, broadcaster, logger) {
+    this.adminStore = adminStore;
+    this.broadcaster = broadcaster;
+    this.logger = logger;
+  }
 
-  public async execute(params: {
-    session: SocketSession;
-    rateLimiter: IRateLimiter;
-    payload: any;
-  }): Promise<boolean> {
+  /**
+   * @param {{ session: import('../../domain/entities/SocketSession.js').SocketSession, rateLimiter: import('../../domain/ports/types.js').IRateLimiter, payload: any }} params
+   * @returns {Promise<boolean>}
+   */
+  async execute(params) {
     const { session, rateLimiter, payload } = params;
 
     if (!payload || typeof payload !== 'object') return false;
@@ -40,7 +40,6 @@ export class RelayPrivateMessageUseCase {
 
     if (!message) return false;
 
-    // Rate Limiting
     if (!rateLimiter.tryConsume(message.type)) {
       this.logger.warn(
         { socketId: session.socketId, type: message.type, ip: session.clientIp },
@@ -49,7 +48,6 @@ export class RelayPrivateMessageUseCase {
       return false;
     }
 
-    // Contrôle strict des autorisations
     if (!session.isAdmin) {
       const isTargetAdmin = await this.adminStore.isAdminSocket(toid);
       const authCheck = AuthorizationPolicy.canEmitPrivate(
@@ -67,7 +65,6 @@ export class RelayPrivateMessageUseCase {
       }
     }
 
-    // Relais privé sous sendMsg vers toid
     this.broadcaster.sendToSocket(toid, 'sendMsg', message.toPayload());
     return true;
   }

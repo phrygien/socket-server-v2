@@ -1,32 +1,31 @@
 /**
- * @file src/core/application/use-cases/AuthenticateAdminUseCase.ts
+ * @file src/core/application/use-cases/AuthenticateAdminUseCase.js
  * @description Cas d'utilisation : Authentification d'un administrateur régie avec vérification sécurisée.
  */
 
-import { SocketSession } from '../../domain/entities/SocketSession.ts';
-import { IAdminStore } from '../../domain/ports/IAdminStore.ts';
-import { IBroadcaster } from '../../domain/ports/IBroadcaster.ts';
-import { ILogger } from '../../domain/ports/ILogger.ts';
-import { Room } from '../../domain/entities/Room.ts';
-
-export interface IKeyValidator {
-  isValid(providedKey: unknown, expectedKey: string): boolean;
-}
+import { Room } from '../../domain/entities/Room.js';
 
 export class AuthenticateAdminUseCase {
-  constructor(
-    private readonly adminStore: IAdminStore,
-    private readonly broadcaster: IBroadcaster,
-    private readonly keyValidator: IKeyValidator,
-    private readonly expectedAdminKey: string,
-    private readonly logger: ILogger
-  ) {}
+  /**
+   * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
+   * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
+   * @param {import('../../domain/ports/types.js').IKeyValidator} keyValidator
+   * @param {string} expectedAdminKey
+   * @param {import('../../domain/ports/types.js').ILogger} logger
+   */
+  constructor(adminStore, broadcaster, keyValidator, expectedAdminKey, logger) {
+    this.adminStore = adminStore;
+    this.broadcaster = broadcaster;
+    this.keyValidator = keyValidator;
+    this.expectedAdminKey = expectedAdminKey;
+    this.logger = logger;
+  }
 
-  public async execute(params: {
-    session: SocketSession;
-    pseudo: unknown;
-    providedKey: unknown;
-  }): Promise<{ ok: boolean }> {
+  /**
+   * @param {{ session: import('../../domain/entities/SocketSession.js').SocketSession, pseudo: unknown, providedKey: unknown }} params
+   * @returns {Promise<{ ok: boolean }>}
+   */
+  async execute(params) {
     const { session, pseudo, providedKey } = params;
 
     if (!providedKey || typeof providedKey !== 'string') {
