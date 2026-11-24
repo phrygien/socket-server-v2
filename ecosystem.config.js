@@ -1,6 +1,6 @@
 /**
  * @file ecosystem.config.js
- * @description Configuration PM2 pour le déploiement en production du serveur Auctav Socket.IO.
+ * @description Configuration PM2 pour le déploiement en production du serveur Socket.IO.
  * 
  * Note Architecture :
  * - En mode cluster ('instances: max' ou > 1), chaque processus a sa propre mémoire.
@@ -12,7 +12,7 @@
 module.exports = {
   apps: [
     {
-      name: 'auctav-socket-server',
+      name: 'auction-socket-server',
       script: './server.js',
       // Utiliser 1 instance si REDIS_URL n'est pas configuré, sinon 'max' pour cluster multi-cœurs
       instances: process.env.REDIS_URL ? 'max' : 1,
@@ -36,7 +36,8 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3000,
         ADMIN_KEY: 'METTRE_VOTRE_CLE_SECRETE_PRODUCTION_ICI',
-        ALLOWED_ORIGINS: 'https://www.auctav.com,https://auctav.com,https://socket-auctav.astucom.com',
+        ALLOWED_ORIGINS: 'https://www.example.com,https://example.com,https://socket.example.com',
+        ROOM_PREFIX: 'auction',
         LOG_LEVEL: 'info',
         ALLOW_UNAUTH_UPDATELOT: 'false',
         // REDIS_URL: 'redis://127.0.0.1:6379',

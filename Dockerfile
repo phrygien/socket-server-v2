@@ -1,5 +1,5 @@
 # ==============================================================================
-# AUCTAV REALTIME SOCKET.IO SERVER - DOCKERFILE
+# LIVE AUCTION REALTIME SOCKET.IO SERVER - DOCKERFILE
 # ==============================================================================
 FROM node:20-alpine AS base
 
@@ -13,8 +13,8 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 # Création d'un utilisateur non-root pour la sécurité
-RUN addgroup --system --gid 1001 auctav && \
-    adduser --system --uid 1001 -G auctav auctav
+RUN addgroup --system --gid 1001 auction && \
+    adduser --system --uid 1001 -G auction auction
 
 # Copie des fichiers de manifeste de paquets
 COPY package.json package-lock.json* ./
@@ -28,9 +28,9 @@ COPY server.js ./
 COPY src ./src
 
 # Attribution des droits au compte applicatif
-RUN chown -R auctav:auctav /app
+RUN chown -R auction:auction /app
 
-USER auctav
+USER auction
 
 EXPOSE 3000
 

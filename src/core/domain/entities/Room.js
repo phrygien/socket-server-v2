@@ -3,8 +3,12 @@
  * @description Entité Room représentant une salle de vente aux enchères ou un canal de diffusion.
  */
 
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export class Room {
-  static ROOM_PATTERN = /^auctav(\d+|_follow|_screen)$/;
+  static DEFAULT_PREFIX = 'auction';
 
   /**
    * @param {string} name
@@ -18,20 +22,34 @@ export class Room {
   }
 
   /**
+   * Construit la regex de validation pour un préfixe donné.
+   * @param {string} [prefix='auction']
+   * @returns {RegExp}
+   */
+  static buildPattern(prefix = Room.DEFAULT_PREFIX) {
+    const safePrefix = typeof prefix === 'string' && /^[a-zA-Z0-9_-]{1,30}$/.test(prefix)
+      ? prefix
+      : Room.DEFAULT_PREFIX;
+    return new RegExp(`^${escapeRegExp(safePrefix)}(\\d+|_follow|_screen)$`);
+  }
+
+  /**
    * Crée et valide une instance de Room à partir de son nom.
    * @param {unknown} rawName
+   * @param {string} [prefix='auction']
    * @returns {Room | null}
    */
-  static fromName(rawName) {
+  static fromName(rawName, prefix = Room.DEFAULT_PREFIX) {
     if (typeof rawName !== 'string') return null;
     const trimmed = rawName.trim();
-    const match = trimmed.match(Room.ROOM_PATTERN);
+    const pattern = Room.buildPattern(prefix);
+    const match = trimmed.match(pattern);
     if (!match) return null;
 
-    if (trimmed === 'auctav_follow') {
+    if (trimmed === `${prefix}_follow`) {
       return new Room(trimmed, 'follow');
     }
-    if (trimmed === 'auctav_screen') {
+    if (trimmed === `${prefix}_screen`) {
       return new Room(trimmed, 'screen');
     }
 
@@ -41,9 +59,10 @@ export class Room {
 
   /**
    * @param {unknown} name
+   * @param {string} [prefix='auction']
    * @returns {boolean}
    */
-  static isValid(name) {
-    return Room.fromName(name) !== null;
+  static isValid(name, prefix = Room.DEFAULT_PREFIX) {
+    return Room.fromName(name, prefix) !== null;
   }
 }

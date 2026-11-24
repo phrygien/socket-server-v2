@@ -1,6 +1,6 @@
-# 🐴 Auctav Realtime Socket.IO Server
+# 🐴 Live Auction Realtime Socket.IO Server
 
-Serveur de relais temps réel haute performance pour la plateforme de ventes aux enchères de chevaux en direct **Auctav**.
+Serveur de relais temps réel haute performance pour plateforme de ventes aux enchères en direct.
 
 Ce serveur assure le pont bidirectionnel instantané entre la **régie/commissaire-priseur (Admin)**, les **enchérisseurs (bidders web et mobiles)**, les **écrans de projection en salle** et les **systèmes de suivi et d'historique (logs)**.
 
@@ -32,10 +32,10 @@ Le serveur n'intègre **aucune logique métier propre aux enchères** :
   4. Contrôle strict d'accès (RBAC) et limitation de débit (Rate Limiting).
 
 ### Format des Rooms
-Les rooms autorisées répondent impérativement à l'expression régulière `^auctav(\d+|_follow|_screen)$` :
-- `auctav{ID}` (ex. `auctav12`) : Room principale d'une vente (Admin, enchérisseurs, écrans salle).
-- `auctav_follow` : Flux temps réel pour les écrans et pages de logs régie.
-- `auctav_screen` : Écrans d'affichage vidéo grand format.
+Par défaut (`ROOM_PREFIX=auction`), les rooms autorisées répondent à l'expression régulière `^auction(\d+|_follow|_screen)$` (configurable via la variable `ROOM_PREFIX`) :
+- `{prefix}{ID}` (ex. `auction12`) : Room principale d'une vente (Admin, enchérisseurs, écrans salle).
+- `{prefix}_follow` (ex. `auction_follow`) : Flux temps réel pour les écrans et pages de logs régie.
+- `{prefix}_screen` (ex. `auction_screen`) : Écrans d'affichage vidéo grand format.
 
 ---
 
@@ -66,7 +66,7 @@ Les rooms autorisées répondent impérativement à l'expression régulière `^a
 
 | Type | Flux Type | Émetteur | Destinataire | Description |
 | :--- | :--- | :--- | :--- | :--- |
-| `numLot` | `getMsgRoom` | Admin | Room (`auctav{ID}`, `auctav_screen`) | Annonce du numéro et descriptif du lot en cours |
+| `numLot` | `getMsgRoom` | Admin | Room (`auction{ID}`, `auction_screen`) | Annonce du numéro et descriptif du lot en cours |
 | `listLot` | `getMsgRoom` / `Private` | Admin | Room ou Client | Liste complète des lots du catalogue de la vente |
 | `updateLot` | `getMsgRoom` | Admin / `update.php` | Room | Modification des données d'un lot (pédigrée, réserve...) |
 | `closeEnchere` | `getMsgRoom` | Admin | Room | Clôture de l'enchère (adjudication ou rachat) |
@@ -83,13 +83,13 @@ Les rooms autorisées répondent impérativement à l'expression régulière `^a
 | `connected` | `getMsgPrivate` | Client | Admin | Notification de présence de l'enchérisseur |
 | `exit` | `getMsgPrivate` | Client | Admin | Sortie volontaire de la salle d'enchère |
 | `follow` | `getMsgPrivate` | Client | Admin | Inscription au flux de suivi |
-| `message` / `online` / `users` | `getMsgRoom` | Admin | Room `auctav_follow` | Télémétrie et logs destinés à la console de suivi |
+| `message` / `online` / `users` | `getMsgRoom` | Admin | Room `auction_follow` | Télémétrie et logs destinés à la console de suivi |
 
 ---
 
 ## 3. Compatibilité Socket.IO v4 ↔ Client 2.3.0 (allowEIO3)
 
-Les applications clientes Auctav existantes sont intégrées dans des pages PHP avec la bibliothèque JavaScript `socket.io-client 2.3.0`.
+Les applications clientes existantes sont intégrées dans des pages PHP avec la bibliothèque JavaScript `socket.io-client 2.3.0`.
 
 ### Le problème du protocole Engine.IO
 - `socket.io-client@2.x` utilise le protocole **Engine.IO v3**.
@@ -131,7 +131,7 @@ var socket = io.connect('https://socket.example.com/', { withCredentials: true }
 
 socket.on('connect', function() {
     // Authentification de la régie secondaire avec la clé secrète partagée
-    var adminKey = '<?php echo AUCTAV_SOCKET_ADMIN_KEY; ?>';
+    var adminKey = '<?php echo SOCKET_ADMIN_KEY; ?>';
     socket.emit('admin', 'RegieUpdatePHP', adminKey, function(ack) {
         if (ack && ack.ok) {
             console.log('update.php authentifié auprès du serveur Socket.IO');
@@ -144,7 +144,7 @@ socket.on('connect', function() {
 // Émission normale ensuite :
 function sendLotUpdate(lotId, data) {
     socket.emit('getMsgRoom', {
-        room: 'auctav' + venteId,
+        room: 'auction' + venteId,
         type: 'updateLot',
         msg: data,
         name: 'Régie Update'
@@ -169,6 +169,7 @@ Créez votre fichier `.env` sur le serveur :
 | `PORT` | `3000` | Non | Port d'écoute du serveur Node.js |
 | `ADMIN_KEY` | - | **OUI** | Clé secrète d'administration régie (à générer aléatoirement) |
 | `ALLOWED_ORIGINS` | `https://www.example.com,https://example.com` | **OUI** | Liste blanche des domaines autorisés pour CORS (séparés par `,`) |
+| `ROOM_PREFIX` | `auction` | Non | Préfixe des rooms autorisées (`{prefix}{ID}`, `{prefix}_follow`, `{prefix}_screen`) |
 | `REDIS_URL` | *vide* | Non | URL Redis (ex. `redis://127.0.0.1:6379`) pour clustering multi-processus |
 | `LOG_LEVEL` | `info` | Non | Niveau de log Pino (`fatal`, `error`, `warn`, `info`, `debug`) |
 | `ALLOW_UNAUTH_UPDATELOT`| `false` | Non | Autorise exceptionnellement `updateLot` non authentifié |
@@ -188,7 +189,7 @@ Créez votre fichier `.env` sur le serveur :
 
 2. **Installation des dépendances** :
    ```bash
-   cd /var/www/auctav-socket
+   cd /var/www/auction-socket
    npm ci --omit=dev
    ```
 
@@ -207,7 +208,7 @@ Créez votre fichier `.env` sur le serveur :
 
 5. **Surveillance** :
    ```bash
-   pm2 logs auctav-socket-server
+   pm2 logs auction-socket-server
    pm2 monit
    ```
 
@@ -259,7 +260,7 @@ ADMIN_KEY="votre_cle" TEST_SERVER_URL="http://127.0.0.1:3000" node test-client.j
 Le script vérifie automatiquement :
 1. Le rejet sur mauvaise clé admin (`timingSafeEqual`).
 2. L'authentification réussie de l'admin et l'accusé de réception.
-3. L'attribution de la room `auctav12` et l'émission de `userList`.
+3. L'attribution de la room `auction12` et l'émission de `userList`.
 4. L'émission d'une enchère privée `doEncheres` par le client vers l'admin.
 5. La confirmation privée `confirmEnchere` de l'admin vers le client.
 6. La diffusion de `numLot` et `closeEnchere` à toute la room.

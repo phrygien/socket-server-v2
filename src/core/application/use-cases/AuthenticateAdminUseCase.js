@@ -12,13 +12,15 @@ export class AuthenticateAdminUseCase {
    * @param {import('../../domain/ports/types.js').IKeyValidator} keyValidator
    * @param {string} expectedAdminKey
    * @param {import('../../domain/ports/types.js').ILogger} logger
+   * @param {string} [roomPrefix='auction']
    */
-  constructor(adminStore, broadcaster, keyValidator, expectedAdminKey, logger) {
+  constructor(adminStore, broadcaster, keyValidator, expectedAdminKey, logger, roomPrefix = Room.DEFAULT_PREFIX) {
     this.adminStore = adminStore;
     this.broadcaster = broadcaster;
     this.keyValidator = keyValidator;
     this.expectedAdminKey = expectedAdminKey;
     this.logger = logger;
+    this.roomPrefix = roomPrefix;
   }
 
   /**
@@ -50,7 +52,7 @@ export class AuthenticateAdminUseCase {
     // Si l'admin était déjà inscrit dans des rooms avant de s'authentifier,
     // enregistrer son id comme autorité de ces rooms et diffuser userList
     for (const roomName of session.rooms) {
-      if (Room.isValid(roomName)) {
+      if (Room.isValid(roomName, this.roomPrefix)) {
         await this.adminStore.set(roomName, session.socketId);
         const count = this.broadcaster.getRoomSocketsCount(roomName);
         this.broadcaster.broadcastUserList(roomName, {

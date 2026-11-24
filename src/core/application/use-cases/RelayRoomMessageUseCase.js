@@ -12,11 +12,13 @@ export class RelayRoomMessageUseCase {
    * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
    * @param {boolean} allowUnauthUpdateLot
    * @param {import('../../domain/ports/types.js').ILogger} logger
+   * @param {string} [roomPrefix='auction']
    */
-  constructor(broadcaster, allowUnauthUpdateLot, logger) {
+  constructor(broadcaster, allowUnauthUpdateLot, logger, roomPrefix = Room.DEFAULT_PREFIX) {
     this.broadcaster = broadcaster;
     this.allowUnauthUpdateLot = allowUnauthUpdateLot;
     this.logger = logger;
+    this.roomPrefix = roomPrefix;
   }
 
   /**
@@ -28,7 +30,7 @@ export class RelayRoomMessageUseCase {
 
     if (!payload || typeof payload !== 'object') return false;
 
-    const room = Room.fromName(payload.room);
+    const room = Room.fromName(payload.room, this.roomPrefix);
     if (!room) return false;
 
     const message = Message.create({

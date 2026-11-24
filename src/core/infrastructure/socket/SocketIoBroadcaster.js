@@ -8,9 +8,11 @@ import { Room } from '../../domain/entities/Room.js';
 export class SocketIoBroadcaster {
   /**
    * @param {import('socket.io').Server} io
+   * @param {string} [roomPrefix='auction']
    */
-  constructor(io) {
+  constructor(io, roomPrefix = Room.DEFAULT_PREFIX) {
     this.io = io;
+    this.roomPrefix = roomPrefix;
   }
 
   broadcastToRoom(room, event, payload) {
@@ -41,7 +43,7 @@ export class SocketIoBroadcaster {
     const roomsMap = this.io.sockets.adapter.rooms;
     const activeRooms = [];
     for (const roomName of roomsMap.keys()) {
-      if (Room.isValid(roomName)) {
+      if (Room.isValid(roomName, this.roomPrefix)) {
         activeRooms.push(roomName);
       }
     }

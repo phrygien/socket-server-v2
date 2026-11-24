@@ -23,13 +23,14 @@ import { HttpHealthController } from './interfaces/controllers/HttpHealthControl
  * @param {http.Server | null} [existingHttpServer=null]
  * @param {{ app?: import('express').Express, redisUrl?: string | null }} [options={}]
  */
-export async function bootstrapAuctavServer(existingHttpServer = null, options = {}) {
+export async function bootstrapAuctionServer(existingHttpServer = null, options = {}) {
   // 1. Configuration & Logger
   const configService = new ConfigService();
   const isDev = configService.get('nodeEnv') !== 'production';
   const logger = new PinoLogger(configService.get('logLevel'), isDev);
+  const roomPrefix = configService.get('roomPrefix');
 
-  if (configService.get('adminKey') === 'auctav_secret_dev_key') {
+  if (configService.get('adminKey') === 'auction_secret_dev_key') {
     logger.warn('ADMIN_KEY par défaut détectée ! Définissez impérativement une clé forte en production.');
   }
   if (configService.get('allowUnauthUpdateLot')) {
@@ -98,7 +99,7 @@ export async function bootstrapAuctavServer(existingHttpServer = null, options =
   }
 
   // 6. Infrastructure Broadcaster
-  const broadcaster = new SocketIoBroadcaster(io);
+  const broadcaster = new SocketIoBroadcaster(io, roomPrefix);
 
   // 7. Use Cases applicatifs
   const keyValidator = new TimingSafeKeyValidator();
@@ -107,16 +108,18 @@ export async function bootstrapAuctavServer(existingHttpServer = null, options =
     broadcaster,
     keyValidator,
     configService.get('adminKey'),
-    logger
+    logger,
+    roomPrefix
   );
-  const joinRoomUseCase = new JoinRoomUseCase(adminStore, broadcaster, logger);
+  const joinRoomUseCase = new JoinRoomUseCase(adminStore, broadcaster, logger, roomPrefix);
   const relayRoomUseCase = new RelayRoomMessageUseCase(
     broadcaster,
     configService.get('allowUnauthUpdateLot'),
-    logger
+    logger,
+    roomPrefix
   );
   const relayPrivateUseCase = new RelayPrivateMessageUseCase(adminStore, broadcaster, logger);
-  const handleDisconnectUseCase = new HandleDisconnectUseCase(adminStore, broadcaster, logger);
+  const handleDisconnectUseCase = new HandleDisconnectUseCase(adminStore, broadcaster, logger, roomPrefix);
 
   // 8. Interface Adapters
   const socketEventController = new SocketEventController({
@@ -132,7 +135,7 @@ export async function bootstrapAuctavServer(existingHttpServer = null, options =
   const healthController = new HttpHealthController(broadcaster, adminStore);
   app.get('/', (req, res) => {
     res.status(200).json({
-      service: 'auctav-socket-server',
+      service: 'auction-socket-server',
       description: 'Serveur de relais temps réel pour ventes aux enchères en direct (Clean Architecture)',
       status: 'online',
       architecture: 'Clean Architecture (Domain / Application / Infrastructure / Interfaces)',
@@ -150,7 +153,7 @@ export async function bootstrapAuctavServer(existingHttpServer = null, options =
 
   // 9. Arrêt propre (Graceful Shutdown)
   const shutdown = async signal => {
-    logger.info({ signal }, 'Signal de fermeture reçu, arrêt propre du serveur Auctav...');
+    logger.info({ signal }, 'Signal de fermeture reçu, arrêt propre du serveur...');
     try {
       io.close(() => logger.info('Connexions Socket.IO fermées.'));
       await adminStore.close();

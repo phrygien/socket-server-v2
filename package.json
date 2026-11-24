@@ -1,7 +1,7 @@
 {
-  "name": "auctav-socket-server",
+  "name": "auction-socket-server",
   "version": "1.0.0",
-  "description": "Serveur Socket.IO backend haute performance pour ventes aux enchères équines Auctav (Clean Architecture, Engine.IO v3 & v4)",
+  "description": "Serveur Socket.IO backend haute performance pour ventes aux enchères en direct (Clean Architecture, Engine.IO v3 & v4)",
   "private": true,
   "type": "module",
   "scripts": {

@@ -10,11 +10,13 @@ export class JoinRoomUseCase {
    * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
    * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
    * @param {import('../../domain/ports/types.js').ILogger} logger
+   * @param {string} [roomPrefix='auction']
    */
-  constructor(adminStore, broadcaster, logger) {
+  constructor(adminStore, broadcaster, logger, roomPrefix = Room.DEFAULT_PREFIX) {
     this.adminStore = adminStore;
     this.broadcaster = broadcaster;
     this.logger = logger;
+    this.roomPrefix = roomPrefix;
   }
 
   /**
@@ -24,7 +26,7 @@ export class JoinRoomUseCase {
   async execute(params) {
     const { session, rawRoom, onJoinSocketRoom } = params;
 
-    const room = Room.fromName(rawRoom);
+    const room = Room.fromName(rawRoom, this.roomPrefix);
     if (!room) {
       this.logger.debug({ socketId: session.socketId, rawRoom }, 'joinroom ignoré : format de room invalide');
       return false;

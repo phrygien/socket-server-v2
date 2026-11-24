@@ -1,6 +1,6 @@
 /**
  * @file test-client.js
- * @description Script de test automatisé du protocole Auctav Socket.IO.
+ * @description Script de test automatisé du protocole Socket.IO d'enchères en direct.
  * Simule les 3 acteurs clés :
  * 1. Admin (Régie / Commissaire-priseur)
  * 2. Enchérisseur (Bidder web/mobile)
@@ -9,7 +9,7 @@
  * Scénario validé :
  * 1. Rejet sécurisé sur mauvaise clé admin
  * 2. Connexion et authentification de l'Admin avec timingSafeEqual ack({ ok: true })
- * 3. Inscription dans la room 'auctav12' -> userList { admin: adminId, count: 1 }
+ * 3. Inscription dans la room '{prefix}12' -> userList { admin: adminId, count: 1 }
  * 4. Connexion de l'Enchérisseur et de l'Écran -> réception de userList avec l'admin
  * 5. Enchérisseur émet 'doEncheres' en privé vers l'Admin -> Admin reçoit sendMsg
  * 6. Admin valide avec 'confirmEnchere' en privé vers l'Enchérisseur -> Enchérisseur reçoit sendMsg
@@ -24,11 +24,13 @@ import { io } from 'socket.io-client';
 
 const PORT = process.env.PORT || '3000';
 const SERVER_URL = process.env.TEST_SERVER_URL || `http://127.0.0.1:${PORT}`;
-const ADMIN_KEY = process.env.ADMIN_KEY || 'auctav_secret_dev_key';
-const ROOM = 'auctav12';
+const ADMIN_KEY = process.env.ADMIN_KEY || 'auction_secret_dev_key';
+const ROOM_PREFIX = process.env.ROOM_PREFIX || 'auction';
+const ROOM = `${ROOM_PREFIX}12`;
+const SCREEN_ROOM = `${ROOM_PREFIX}_screen`;
 
 console.log('===============================================================');
-console.log(`🐴 Démarrage du Banc de Test Auctav Socket.IO sur ${SERVER_URL}`);
+console.log(`🐴 Démarrage du Banc de Test Socket.IO sur ${SERVER_URL}`);
 console.log('===============================================================\n');
 
 function createSocket() {
@@ -144,7 +146,7 @@ async function runTests() {
     );
 
     // --------------------------------------------------------------------------
-    // ÉTAPE 3 : Admin rejoint la room 'auctav12'
+    // ÉTAPE 3 : Admin rejoint la room principale
     // --------------------------------------------------------------------------
     const adminUserListPromise = withTimeout(
       new Promise(resolve => {
@@ -179,7 +181,7 @@ async function runTests() {
     );
 
     screenSocket.emit('joinroom', ROOM);
-    screenSocket.emit('joinroom', 'auctav_screen');
+    screenSocket.emit('joinroom', SCREEN_ROOM);
     await sleep(200);
 
     // --------------------------------------------------------------------------
@@ -225,7 +227,7 @@ async function runTests() {
       toid: bidderId,
       type: 'confirmEnchere',
       msg: { lot: 45, montant: 35000, status: 'ACCEPTEE' },
-      name: 'Régie Auctav',
+      name: 'Régie Enchères',
     });
 
     const receivedConfirm = await bidderReceivedConfirmPromise;
@@ -250,7 +252,7 @@ async function runTests() {
     adminSocket.emit('getMsgRoom', {
       room: ROOM,
       type: 'numLot',
-      msg: { lot: 46, nomCheval: 'Royal Thunder', prixDepart: 20000 },
+      msg: { lot: 46, nomLot: 'Royal Thunder', prixDepart: 20000 },
       name: 'Commissaire-Priseur',
     });
 
@@ -272,7 +274,7 @@ async function runTests() {
       room: ROOM,
       type: 'closeEnchere',
       msg: { lot: 46, statut: 'ADJUGE', montantFinal: 65000 },
-      name: 'Régie Auctav',
+      name: 'Régie Enchères',
     });
 
     await sleep(300);
@@ -332,7 +334,6 @@ async function runTests() {
     }
     process.exitCode = 1;
   } finally {
-    // Fermeture propre des sockets avant la fin naturelle du processus (évite le crash libuv UV_HANDLE_CLOSING sous Windows)
     await closeSocketSafely(adminSocket);
     await closeSocketSafely(bidderSocket);
     await closeSocketSafely(screenSocket);

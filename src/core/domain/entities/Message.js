@@ -1,6 +1,6 @@
 /**
  * @file src/core/domain/entities/Message.js
- * @description Value Object et validation des messages relayés dans le protocole Auctav.
+ * @description Value Object et validation des messages relayés dans le protocole d'enchères temps réel.
  */
 
 export class Message {

@@ -1,6 +1,6 @@
 /**
  * @file src/core/domain/policies/AuthorizationPolicy.js
- * @description Politiques de sécurité et matrice des droits d'émission pour le protocole Auctav.
+ * @description Politiques de sécurité et matrice des droits d'émission pour le protocole d'enchères temps réel.
  */
 
 export class AuthorizationPolicy {

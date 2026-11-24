@@ -22,7 +22,7 @@ export class HttpHealthController {
       const activeRooms = this.broadcaster.getAllActiveRooms();
       res.status(200).json({
         status: 'ok',
-        service: 'auctav-socket-server',
+        service: 'auction-socket-server',
         version: '4.8.4-clean-arch',
         uptime: Math.floor(process.uptime()),
         connections: this.broadcaster.getTotalConnectionsCount(),

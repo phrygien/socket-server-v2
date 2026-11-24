@@ -10,11 +10,13 @@ export class HandleDisconnectUseCase {
    * @param {import('../../domain/ports/types.js').IAdminStore} adminStore
    * @param {import('../../domain/ports/types.js').IBroadcaster} broadcaster
    * @param {import('../../domain/ports/types.js').ILogger} logger
+   * @param {string} [roomPrefix='auction']
    */
-  constructor(adminStore, broadcaster, logger) {
+  constructor(adminStore, broadcaster, logger, roomPrefix = Room.DEFAULT_PREFIX) {
     this.adminStore = adminStore;
     this.broadcaster = broadcaster;
     this.logger = logger;
+    this.roomPrefix = roomPrefix;
   }
 
   /**
@@ -40,7 +42,7 @@ export class HandleDisconnectUseCase {
       }
     } else {
       for (const roomName of session.rooms) {
-        if (Room.isValid(roomName)) {
+        if (Room.isValid(roomName, this.roomPrefix)) {
           const currentCount = Math.max(0, this.broadcaster.getRoomSocketsCount(roomName) - 1);
           const adminId = await this.adminStore.get(roomName);
           this.broadcaster.broadcastUserList(roomName, {

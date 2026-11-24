@@ -1,6 +1,6 @@
 /**
  * @file src/core/interfaces/controllers/SocketEventController.js
- * @description Contrôleur Socket.IO mappant les événements du protocole Auctav vers les Use Cases applicatifs.
+ * @description Contrôleur Socket.IO mappant les événements du protocole vers les Use Cases applicatifs.
  */
 
 import { SocketSession } from '../../domain/entities/SocketSession.js';

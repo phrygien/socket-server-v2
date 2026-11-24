@@ -1,19 +1,20 @@
 /**
  * @file src/socketServer.js
- * @description Point d'entrée du moteur Socket.IO Auctav utilisant la Clean Architecture (ESM pur Node.js 20+).
+ * @description Point d'entrée du moteur Socket.IO utilisant la Clean Architecture (ESM pur Node.js 20+).
  */
 
-import { bootstrapAuctavServer } from './core/bootstrap.js';
+import { bootstrapAuctionServer } from './core/bootstrap.js';
 import { AdminStoreFactory } from './core/infrastructure/storage/AdminStoreFactory.js';
 import { TimingSafeKeyValidator } from './core/infrastructure/security/TimingSafeKeyValidator.js';
 import { TokenBucketRateLimiter } from './core/infrastructure/security/TokenBucketRateLimiter.js';
 import { AuthorizationPolicy } from './core/domain/policies/AuthorizationPolicy.js';
+import { Room } from './core/domain/entities/Room.js';
 import { PinoLogger } from './core/infrastructure/logging/PinoLogger.js';
 
 const defaultLogger = new PinoLogger('info', process.env.NODE_ENV !== 'production');
 const defaultKeyValidator = new TimingSafeKeyValidator();
 
-export const ROOM_REGEX = /^auctav(\d+|_follow|_screen)$/;
+export const ROOM_REGEX = Room.buildPattern(process.env.ROOM_PREFIX || Room.DEFAULT_PREFIX);
 export const ADMIN_ONLY_TYPES = AuthorizationPolicy.ADMIN_ONLY_TYPES;
 export const NON_ADMIN_ALLOWED_TYPES = AuthorizationPolicy.NON_ADMIN_ALLOWED_TYPES;
 export const logger = defaultLogger.getRawLogger();
@@ -36,6 +37,6 @@ export const SocketRateLimiter = TokenBucketRateLimiter;
  * @param {import('node:http').Server | null} [existingHttpServer=null]
  * @param {Record<string, any>} [options={}]
  */
-export async function createAuctavServer(existingHttpServer = null, options = {}) {
-  return await bootstrapAuctavServer(existingHttpServer, options);
+export async function createAuctionServer(existingHttpServer = null, options = {}) {
+  return await bootstrapAuctionServer(existingHttpServer, options);
 }

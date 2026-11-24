@@ -1,6 +1,6 @@
 /**
  * @file src/core/infrastructure/storage/RedisAdminStore.js
- * @description Implémentation Redis distribuée de IAdminStore via ioredis (clé auctav:admin:{room}).
+ * @description Implémentation Redis distribuée de IAdminStore via ioredis (clé auction:admin:{room}).
  */
 
 export class RedisAdminStore {
@@ -17,7 +17,7 @@ export class RedisAdminStore {
 
   async get(room) {
     try {
-      return await this.redisClient.get(`auctav:admin:${room}`);
+      return await this.redisClient.get(`auction:admin:${room}`);
     } catch (err) {
       this.logger.error({ err: err.message, room }, 'Erreur Redis get admin');
       return null;
@@ -26,7 +26,7 @@ export class RedisAdminStore {
 
   async set(room, socketId) {
     try {
-      await this.redisClient.set(`auctav:admin:${room}`, socketId);
+      await this.redisClient.set(`auction:admin:${room}`, socketId);
     } catch (err) {
       this.logger.error({ err: err.message, room, socketId }, 'Erreur Redis set admin');
     }
@@ -34,7 +34,7 @@ export class RedisAdminStore {
 
   async delete(room) {
     try {
-      await this.redisClient.del(`auctav:admin:${room}`);
+      await this.redisClient.del(`auction:admin:${room}`);
     } catch (err) {
       this.logger.error({ err: err.message, room }, 'Erreur Redis delete admin');
     }
@@ -42,12 +42,12 @@ export class RedisAdminStore {
 
   async getRoomsBySocketId(socketId) {
     try {
-      const keys = await this.redisClient.keys('auctav:admin:*');
+      const keys = await this.redisClient.keys('auction:admin:*');
       const matchingRooms = [];
       for (const key of keys) {
         const val = await this.redisClient.get(key);
         if (val === socketId) {
-          matchingRooms.push(key.replace('auctav:admin:', ''));
+          matchingRooms.push(key.replace('auction:admin:', ''));
         }
       }
       return matchingRooms;
@@ -59,7 +59,7 @@ export class RedisAdminStore {
 
   async isAdminSocket(socketId) {
     try {
-      const keys = await this.redisClient.keys('auctav:admin:*');
+      const keys = await this.redisClient.keys('auction:admin:*');
       for (const key of keys) {
         const val = await this.redisClient.get(key);
         if (val === socketId) return true;
