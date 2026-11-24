@@ -127,7 +127,7 @@ Dans le fichier PHP / JS de `update.php`, ajoutez l'authentification avec la cl�
 
 ```javascript
 // Dans update.php (client socket.io-client 2.3.0) :
-var socket = io.connect('https://socket-auctav.astucom.com/', { withCredentials: true });
+var socket = io.connect('https://socket.example.com/', { withCredentials: true });
 
 socket.on('connect', function() {
     // Authentification de la régie secondaire avec la clé secrète partagée
@@ -168,7 +168,7 @@ Créez votre fichier `.env` sur le serveur :
 | :--- | :--- | :--- | :--- |
 | `PORT` | `3000` | Non | Port d'écoute du serveur Node.js |
 | `ADMIN_KEY` | - | **OUI** | Clé secrète d'administration régie (à générer aléatoirement) |
-| `ALLOWED_ORIGINS` | `https://www.auctav.com,https://auctav.com` | **OUI** | Liste blanche des domaines autorisés pour CORS (séparés par `,`) |
+| `ALLOWED_ORIGINS` | `https://www.example.com,https://example.com` | **OUI** | Liste blanche des domaines autorisés pour CORS (séparés par `,`) |
 | `REDIS_URL` | *vide* | Non | URL Redis (ex. `redis://127.0.0.1:6379`) pour clustering multi-processus |
 | `LOG_LEVEL` | `info` | Non | Niveau de log Pino (`fatal`, `error`, `warn`, `info`, `debug`) |
 | `ALLOW_UNAUTH_UPDATELOT`| `false` | Non | Autorise exceptionnellement `updateLot` non authentifié |
@@ -230,9 +230,9 @@ Créez votre fichier `.env` sur le serveur :
 
 ### Configuration Nginx Reverse Proxy SSL
 
-Copiez `nginx.conf` vers `/etc/nginx/sites-available/socket-auctav.astucom.com.conf` :
+Copiez `nginx.conf` vers `/etc/nginx/sites-available/socket.example.com.conf` :
 ```bash
-sudo ln -s /etc/nginx/sites-available/socket-auctav.astucom.com.conf /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/socket.example.com.conf /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
